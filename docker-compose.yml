@@ -1,20 +1,46 @@
+version: '3.8'
+
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: greenhouse-postgres
+    container_name: postgres_db
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-greenhouse}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-greenhouse}
-      POSTGRES_DB: ${POSTGRES_DB:-greenhouse}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: minhduc456
+      POSTGRES_DB: greenhouse
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    volumes:
-      - greenhouse_pgdata:/var/lib/postgresql/data
+      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-greenhouse} -d ${POSTGRES_DB:-greenhouse}"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-volumes:
-  greenhouse_pgdata:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: iot_backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@postgres:5432/iot_dashboard
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: iot_frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:8000
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
