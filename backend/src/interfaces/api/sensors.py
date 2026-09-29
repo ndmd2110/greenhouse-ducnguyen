@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from infrastructure.persistence.base import get_db
-from infrastructure.persistence.device_repository import DeviceRepository
-from application.sensors.service import SensorService
+from src.infrastructure.persistence.base import get_db
+from src.infrastructure.persistence.device_repository import DeviceRepository
+from src.application.sensors.service import SensorService
 
 router = APIRouter(prefix="/api/sensors", tags=["sensors"])
 

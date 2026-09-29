@@ -1,7 +1,12 @@
+/* frontend/src/App.css */
 @import "tailwindcss";
 
 @layer base {
   body {
-    @apply min-h-screen bg-slate-50 text-slate-900 antialiased;
+     min-height: 100vh;
+     background-color: #f8fafc;
+     color: #0f172a;
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
   }
 }

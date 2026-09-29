@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { fetchSensors, createSensor, SensorDto } from '../../services/api';
+import { fetchSensors, createSensor } from '../../services/api';
+import type { SensorDto } from '../../services/api';
 
 export const SensorList: React.FC = () => {
   const [sensors, setSensors] = useState<SensorDto[]>([]);
@@ -14,15 +15,15 @@ export const SensorList: React.FC = () => {
       setError(null);
       const data = await fetchSensors();
       setSensors(data);
-    } catch (err: any) {
-      setError(err.message || 'Error loading sensors');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error loading sensors');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadSensors();
+    void Promise.resolve().then(loadSensors);
   }, []);
 
   const handleAddSensor = async (e: React.FormEvent) => {
@@ -31,8 +32,8 @@ export const SensorList: React.FC = () => {
       await createSensor({ type: sensorType, display_name: displayName || undefined });
       setDisplayName('');
       await loadSensors();
-    } catch (err: any) {
-      setError(err.message || 'Error creating sensor');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Error creating sensor');
     }
   };
 
