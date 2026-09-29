@@ -1,4 +1,3 @@
-# backend/src/domain/locations/entity.py
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Tuple
 from uuid import UUID

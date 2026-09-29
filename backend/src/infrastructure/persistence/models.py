@@ -1,4 +1,3 @@
-# backend/src/infrastructure/persistence/models.py
 import uuid
 from datetime import datetime, timezone
 

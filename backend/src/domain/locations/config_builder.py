@@ -1,4 +1,3 @@
-# backend/src/domain/locations/config_builder.py
 from typing import List, Dict, Any, Optional
 from .entity import Location, Zone, LocationConfig
 from .errors import ConfigurationError
