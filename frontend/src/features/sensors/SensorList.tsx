@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { fetchSensors, createSensor } from '../../services/api';
 import type { SensorDto } from '../../services/api';
-
+import { SensorCard } from './SensorCard';
 export const SensorList: React.FC = () => {
   const [sensors, setSensors] = useState<SensorDto[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -74,17 +74,7 @@ export const SensorList: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sensors.map((sensor) => (
-          <div key={sensor.id} className="p-3 border border-slate-100 rounded bg-slate-50">
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-semibold text-slate-700">{sensor.display_name}</span>
-              <span className="text-xs px-2 py-0.5 bg-slate-200 text-slate-600 rounded-full">
-                {sensor.device_type}
-              </span>
-            </div>
-            <pre className="text-xs bg-slate-800 text-slate-100 p-2 rounded overflow-x-auto">
-              {JSON.stringify(sensor.default_config, null, 2)}
-            </pre>
-          </div>
+          <SensorCard key={sensor.id} sensor={sensor} />
         ))}
       </div>
     </div>

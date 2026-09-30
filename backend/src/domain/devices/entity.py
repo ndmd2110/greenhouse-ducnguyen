@@ -12,3 +12,5 @@ class Device:
     default_config: dict
     zone_id: Optional[UUID] = None
     location_id: Optional[UUID] = None
+    sampling_interval_seconds: int = 300
+    tracking_enabled: bool = True

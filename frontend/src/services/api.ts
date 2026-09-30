@@ -10,6 +10,9 @@ export interface SensorDto {
   device_type: string;
   display_name: string;
   default_config: Record<string, unknown>;
+  device_family: string;
+  sampling_interval_seconds: number;
+  tracking_enabled: boolean;
 }
 
 export interface CreateSensorPayload {
@@ -205,5 +208,55 @@ export async function assignDeviceZone(deviceId: string, zoneId: string | null):
 export async function getZoneDevices(locationId: string, zoneId: string): Promise<DeviceDto[]> {
   const res = await fetch(`${API_BASE}/locations/${locationId}/zones/${zoneId}/devices`);
   if (!res.ok) throw new Error("Failed to load zone devices");
+  return res.json();
+}
+// Phase 5 - Readings and sampling
+export interface ReadingDto {
+  device_id: string;
+  value: number;
+  unit: string;
+  source: "simulation" | "mqtt" | "vendor" | string;
+  recorded_at: string; // ISO-8601
+}
+
+export interface SamplingDto {
+  device_id: string;
+  sampling_interval_seconds: number;
+  tracking_enabled: boolean;
+}
+
+async function detailOrDefault(res: Response, fallback: string): Promise<Error> {
+  const body = await res.json().catch(() => ({}));
+  return new Error(typeof body.detail === "string" ? body.detail : fallback);
+}
+
+export async function readSensorNow(sensorId: string): Promise<ReadingDto> {
+  const res = await fetch(`${API_BASE}/sensors/${sensorId}/read`, { method: "POST" });
+  if (!res.ok) throw await detailOrDefault(res, "Failed to read sensor");
+  return res.json();
+}
+
+export async function getReadings(sensorId: string, limit = 20): Promise<ReadingDto[]> {
+  const res = await fetch(`${API_BASE}/sensors/${sensorId}/readings?limit=${limit}`);
+  if (!res.ok) throw await detailOrDefault(res, "Failed to load readings");
+  return res.json();
+}
+
+export async function getLatestReading(sensorId: string): Promise<ReadingDto | null> {
+  const readings = await getReadings(sensorId, 1);
+  return readings[0] ?? null;
+}
+
+export async function updateSampling(
+  deviceId: string,
+  sampling_interval_seconds: number,
+  tracking_enabled: boolean,
+): Promise<SamplingDto> {
+  const res = await fetch(`${API_BASE}/devices/${deviceId}/sampling`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sampling_interval_seconds, tracking_enabled }),
+  });
+  if (!res.ok) throw await detailOrDefault(res, "Failed to update sampling");
   return res.json();
 }

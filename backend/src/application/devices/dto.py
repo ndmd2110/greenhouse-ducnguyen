@@ -11,4 +11,5 @@ class DeviceDto(BaseModel):
     default_config: Dict[str, Any]
     zone_id: UUID | None = None
     location_id: UUID | None = None
-    
+    sampling_interval_seconds: int = 300
+    tracking_enabled: bool = True

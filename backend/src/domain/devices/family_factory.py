@@ -22,7 +22,7 @@ class SimulationFactory(DeviceFamilyFactory):
     def create_device_set(self) -> List[Device]:
         return _create_family_devices(
             family=self.family_key,
-            protocol="sim",
+            protocol="simulation",
             sensor_names=("Sim soil moisture", "Sim ambient light"),
             actuator_names=("Sim irrigation pump", "Sim grow light"),
         )
@@ -36,7 +36,7 @@ class EdgeFactory(DeviceFamilyFactory):
     def create_device_set(self) -> List[Device]:
         return _create_family_devices(
             family=self.family_key,
-            protocol="gpio-stub",
+            protocol="mqtt",
             sensor_names=("Edge soil moisture", "Edge ambient light"),
             actuator_names=("Edge irrigation pump", "Edge grow light"),
         )

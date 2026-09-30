@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-
+from src.infrastructure.persistence.models import DeviceRow, LocationRow, ReadingRow, ZoneRow  # noqa: F401
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 

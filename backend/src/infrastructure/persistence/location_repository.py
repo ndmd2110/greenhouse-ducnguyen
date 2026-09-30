@@ -11,6 +11,7 @@ from src.application.locations.dto import ZoneCreateRequest, ZoneUpdateRequest
 from src.domain.devices.entity import Device
 from src.domain.locations.entity import Location, LocationConfig, Zone
 from src.infrastructure.persistence.models import DeviceRow, LocationRow, ZoneRow
+from src.infrastructure.persistence.mappers import device_row_to_domain
 
 
 class LocationRepository:
@@ -187,16 +188,7 @@ class LocationRepository:
             row.location_id = zone.location_id
         self.session.commit()
         self.session.refresh(row)
-        return Device(
-            id=row.id,
-            device_type=row.device_type,
-            role=row.role,
-            device_family=row.device_family,
-            display_name=row.display_name,
-            default_config=row.default_config,
-            zone_id=row.zone_id,
-            location_id=row.location_id,
-        )
+        return device_row_to_domain(row)
 
     def clear_device_zone(self, device_id: UUID) -> Device:
         return self.assign_device_to_zone(device_id, None)
@@ -213,16 +205,7 @@ class LocationRepository:
             .all()
         )
         return [
-            Device(
-                id=row.id,
-                device_type=row.device_type,
-                role=row.role,
-                device_family=row.device_family,
-                display_name=row.display_name,
-                default_config=row.default_config,
-                zone_id=row.zone_id,
-                location_id=row.location_id,
-            )
+            device_row_to_domain(row)
             for row in rows
         ]
 
@@ -230,16 +213,7 @@ class LocationRepository:
         row = self.session.get(DeviceRow, device_id)
         if row is None:
             return None
-        return Device(
-            id=row.id,
-            device_type=row.device_type,
-            role=row.role,
-            device_family=row.device_family,
-            display_name=row.display_name,
-            default_config=row.default_config,
-            zone_id=row.zone_id,
-            location_id=row.location_id,
-        )
+        return device_row_to_domain(row)
 
     @staticmethod
     def map_device_row_to_dto(device: Device) -> DeviceDto:
