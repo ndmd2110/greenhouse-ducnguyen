@@ -1,6 +1,9 @@
 import { LocationConfigWizard } from './components/config/LocationConfigWizard'
 import { DeviceList } from './components/devices/DeviceList'
 import { SensorList } from './features/sensors/SensorList'
+import { StrategyPanel } from './features/automation/StrategyPanel'
+import { OverviewPanel } from './components/overview/OverviewPanel'
+
 import './index.css'
 
 function App() {
@@ -20,6 +23,12 @@ function App() {
         </header>
         <section id="configuration">
           <LocationConfigWizard />
+        </section>
+         <section id="automation">
+          <StrategyPanel />
+        </section>
+        <section id="overview">
+          <OverviewPanel />
         </section>
         <DeviceList />
         <SensorList />

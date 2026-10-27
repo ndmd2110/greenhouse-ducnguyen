@@ -107,3 +107,12 @@ class DeviceRepository:
         self.session.commit()
         self.session.refresh(row)
         return device_row_to_domain(row)
+    def list_assigned_to_location(self, location_id: UUID) -> list[Device]:
+        """Devices with this location_id AND a zone_id. One query; unassigned devices never match."""
+        rows = (
+            self.session.query(DeviceRow)
+            .filter(DeviceRow.location_id == location_id, DeviceRow.zone_id.is_not(None))
+            .order_by(DeviceRow.created_at.asc(), DeviceRow.id.asc())
+            .all()
+        )
+        return [device_row_to_domain(row) for row in rows]

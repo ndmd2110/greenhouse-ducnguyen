@@ -4,10 +4,12 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+# Lets `pytest` and `alembic` import `src.*` from /app
+ENV PYTHONPATH=/app
 
 COPY pyproject.toml .
-# Install dependencies
-RUN pip install --no-cache-dir .
+# Runtime + dev extras (pytest, httpx) so tests can run inside the container
+RUN pip install --no-cache-dir ".[dev]"
 
 COPY . .
 

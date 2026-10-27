@@ -1,3 +1,4 @@
+import os
 from logging.config import fileConfig
 from src.infrastructure.persistence.models import DeviceRow, LocationRow, ReadingRow, ZoneRow  # noqa: F401
 from sqlalchemy import engine_from_config
@@ -15,7 +16,9 @@ config = context.config
 # This line sets up loggers basically.
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
-
+_env_url = os.getenv("DATABASE_URL")
+if _env_url:
+    config.set_main_option("sqlalchemy.url", _env_url.replace("%", "%%"))
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel

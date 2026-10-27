@@ -1,20 +1,22 @@
-version: '3.8'
-
+# Run:  docker compose up --build
+# Values come from a .env file next to this one (copy .env.example), with the defaults below.
 services:
   postgres:
     image: postgres:16-alpine
     container_name: postgres_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: minhduc456
-      POSTGRES_DB: greenhouse
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-minhduc456}
+      POSTGRES_DB: ${POSTGRES_DB:-greenhouse}
     ports:
-      - "5432:5432"
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-greenhouse}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   backend:
     build:
@@ -22,7 +24,12 @@ services:
       dockerfile: Dockerfile
     container_name: iot_backend
     environment:
-      DATABASE_URL: postgresql+psycopg://postgres:postgrespassword@postgres:5432/iot_dashboard
+      # Same user/password/db as the postgres service above; host is the service name, not localhost.
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-minhduc456}@postgres:5432/${POSTGRES_DB:-greenhouse}
+      # Never silently fall back to SQLite inside Docker.
+      ALLOW_SQLITE_FALLBACK: "false"
+    # Apply Alembic migrations (incl. automation_rules) before the API starts.
+    command: sh -c "alembic upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload"
     ports:
       - "8000:8000"
     volumes:
@@ -30,6 +37,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   frontend:
     build:
@@ -37,10 +50,16 @@ services:
       dockerfile: Dockerfile
     container_name: iot_frontend
     environment:
+      # Read by the BROWSER, so it is the host-published port, not the service name.
       VITE_API_BASE_URL: http://localhost:8000
+      CHOKIDAR_USEPOLLING: "true"
     ports:
       - "5173:5173"
     volumes:
       - ./frontend:/app
+      - /app/node_modules   # keep the container's installed modules; don't let the bind mount hide them
     depends_on:
       - backend
+
+volumes:
+  pgdata:

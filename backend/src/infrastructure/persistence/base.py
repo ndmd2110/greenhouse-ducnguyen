@@ -17,7 +17,7 @@ def build_engine():
             connection.execute(text("SELECT 1"))
         return engine
     except Exception:
-        if database_url.startswith("postgres"):
+        if database_url.startswith("postgres") and settings.allow_sqlite_fallback:
             logger.warning(
                 "PostgreSQL is unavailable; using the local SQLite database for this run."
             )

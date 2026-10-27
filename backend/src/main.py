@@ -20,6 +20,9 @@ from src.infrastructure.persistence.reading_repository import ReadingRepository
 from src.interfaces.api.sensors import router as sensors_router
 from src.interfaces.api.devices import router as devices_router
 from src.interfaces.api.locations import router as locations_router
+from src.interfaces.api.automation import router as automation_router
+from src.interfaces.api.overview import router as overview_router
+
 
 logger = logging.getLogger(__name__)
 SAMPLER_TICK_SECONDS = 1.0  # smallest allowed interval is 5s, so 1s ticks are plenty
@@ -82,8 +85,8 @@ app.add_middleware(
 app.include_router(sensors_router)
 app.include_router(devices_router)
 app.include_router(locations_router)
-
-
+app.include_router(automation_router)
+app.include_router(overview_router)
 # 3. Health check
 @app.get("/health")
 def health_check():

@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Sequence
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.domain.sensors.reading import Reading
@@ -59,3 +59,30 @@ class ReadingRepository:
     def latest_recorded_at(self, device_id: UUID) -> Optional[datetime]:
         latest = self.list_for_device(device_id, limit=1)
         return latest[0].recorded_at if latest else None
+
+
+    def latest_for_devices(self, device_ids: Sequence[UUID]) -> dict[UUID, Reading]:
+        """Newest reading per device (any source) in ONE query, via row_number()."""
+        if not device_ids:
+            return {}
+        ranked = (
+            select(
+                ReadingRow.id.label("id"),
+                func.row_number()
+                .over(
+                    partition_by=ReadingRow.device_id,
+                    order_by=(ReadingRow.recorded_at.desc(), ReadingRow.id.desc()),
+                )
+                .label("rn"),
+            )
+            .where(ReadingRow.device_id.in_(device_ids))
+            .subquery()
+        )
+        rows = (
+            self.session.execute(
+                select(ReadingRow).join(ranked, ranked.c.id == ReadingRow.id).where(ranked.c.rn == 1)
+            )
+            .scalars()
+            .all()
+        )
+        return {row.device_id: _row_to_reading(row) for row in rows}

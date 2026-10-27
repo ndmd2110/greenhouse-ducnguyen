@@ -260,3 +260,103 @@ export async function updateSampling(
   if (!res.ok) throw await detailOrDefault(res, "Failed to update sampling");
   return res.json();
 }
+// Phase 6 - Automation (Strategy) API
+export interface StrategyInfoDto {
+  key: string;
+  description: string;
+}
+
+export interface AutomationRuleDto {
+  location_id: string;
+  strategy_key: string;
+  is_default: boolean;
+}
+
+export interface ZoneRecommendationDto {
+  zone_id: string;
+  zone_name: string;
+  action: string;
+  reason: string;
+  score: number | null;
+  moisture: number | null;
+}
+
+export interface RecommendationDto {
+  location_id: string;
+  strategy_key: string;
+  action: string;
+  reason: string;
+  zones: ZoneRecommendationDto[];
+}
+
+async function readError(res: Response, fallback: string): Promise<Error> {
+  const body = await res.json().catch(() => ({}));
+  return new Error(typeof body.detail === "string" ? body.detail : fallback);
+}
+
+export async function listStrategies(): Promise<StrategyInfoDto[]> {
+  const res = await fetch(`${API_BASE}/automation/strategies`);
+  if (!res.ok) throw await readError(res, "Failed to fetch strategies");
+  return res.json();
+}
+
+export async function getAutomation(locationId: string): Promise<AutomationRuleDto> {
+  const res = await fetch(`${API_BASE}/locations/${locationId}/automation`);
+  if (!res.ok) throw await readError(res, "Failed to fetch automation settings");
+  return res.json();
+}
+
+export async function saveAutomation(locationId: string, strategyKey: string): Promise<AutomationRuleDto> {
+  const res = await fetch(`${API_BASE}/locations/${locationId}/automation`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ strategy_key: strategyKey }),
+  });
+  if (!res.ok) throw await readError(res, "Failed to save strategy");
+  return res.json();
+}
+
+export async function evaluateAutomation(locationId: string): Promise<RecommendationDto> {
+  const res = await fetch(`${API_BASE}/locations/${locationId}/automation/evaluate`, { method: "POST" });
+  if (!res.ok) throw await readError(res, "Failed to evaluate");
+  return res.json();
+}
+// Phase 7 - Facade (location overview)
+export interface OverviewDeviceDto {
+  id: string;
+  device_type: string;
+  role: DeviceRole;
+  display_name: string | null;
+}
+
+export interface OverviewReadingDto {
+  device_id: string;
+  value: number;
+  unit: string;
+  recorded_at: string;
+  tracking_enabled: boolean;
+  sampling_interval_seconds: number;
+}
+
+export interface OverviewZoneDto {
+  id: string;
+  name: string;
+  moisture_threshold_low: number;
+  moisture_threshold_high: number;
+  devices: OverviewDeviceDto[];
+  latest_readings: OverviewReadingDto[];
+}
+
+export interface LocationOverviewDto {
+  location: LocationDto;
+  device_counts: { sensor: number; actuator: number };
+  zones: OverviewZoneDto[];
+  strategy_key: string | null;
+  last_recommendation: { action: string; reason: string } | null;
+}
+
+export async function fetchOverview(locationId: string): Promise<LocationOverviewDto> {
+  const res = await fetch(`${API_BASE}/locations/${locationId}/overview`);
+  if (!res.ok) throw await readError(res, "Failed to load overview");
+  return res.json();
+}
