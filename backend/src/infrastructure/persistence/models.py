@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, true
+from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, true
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import relationship
 
@@ -98,3 +98,39 @@ class AutomationRuleRow(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+    
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+class ActuatorStateRow(Base):
+    """Phase 8: persisted lifecycle state, one row per actuator device."""
+
+    __tablename__ = "actuator_states"
+
+    device_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("devices.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    state = Column(String(32), nullable=False, default="idle")
+    updated_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+
+class ActuatorExecutionLogRow(Base):
+    """Phase 9: one row per apply attempt (success or blocked)."""
+
+    __tablename__ = "actuator_execution_log"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    device_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("devices.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    success = Column(Boolean, nullable=False)
+    policy_applied = Column(JSON().with_variant(JSONB(), "postgresql"), nullable=False, default=list)
+    message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)

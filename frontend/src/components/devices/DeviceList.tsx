@@ -1,12 +1,14 @@
 // frontend/src/components/devices/DeviceList.tsx
 import React, { useCallback, useEffect, useState } from "react";
 import { DeviceFamilySwitcher } from "./DeviceFamilySwitcher";
+import { StateBadge } from "./StateBadge";
 import {
   assignDeviceZone,
   fetchDevices,
   getLocationConfig,
   listLocations,
   provisionDeviceFamily,
+  transitionDevice,
 } from "../../services/api";
 import type { DeviceDto, DeviceFamily } from "../../services/api";
 
@@ -15,6 +17,8 @@ type ZoneOption = {
   label: string;
 };
 
+const STATE_CHOICES = ["off", "idle", "running", "error", "maintenance"];
+
 export const DeviceList: React.FC = () => {
   const [selectedFamily, setSelectedFamily] = useState<DeviceFamily>("simulation");
   const [devices, setDevices] = useState<DeviceDto[]>([]);
@@ -22,6 +26,7 @@ export const DeviceList: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [provisioning, setProvisioning] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [stateErrors, setStateErrors] = useState<Record<string, string>>({});
 
   const loadZoneOptions = useCallback(async () => {
     try {
@@ -80,6 +85,23 @@ export const DeviceList: React.FC = () => {
       await loadDevices();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to assign zone");
+    }
+  };
+
+  // Demo only: the backend domain decides what is legal; we just show its answer.
+  const handleStateChange = async (deviceId: string, target: string) => {
+    if (!target) return;
+    try {
+      const updated = await transitionDevice(deviceId, target);
+      setDevices((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+      setStateErrors((prev) => {
+        const next = { ...prev };
+        delete next[deviceId];
+        return next;
+      });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "State change failed";
+      setStateErrors((prev) => ({ ...prev, [deviceId]: message }));
     }
   };
 
@@ -147,6 +169,33 @@ export const DeviceList: React.FC = () => {
                       {d.device_family}
                     </span>
                   </div>
+
+                  {d.role === "actuator" && d.state && (
+                    <div className="mb-2 rounded border border-slate-200 bg-white p-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">State</span>
+                        <StateBadge state={d.state} allowedCommands={d.allowed_commands} />
+                      </div>
+                      <select
+                        value=""
+                        onChange={(event) => void handleStateChange(d.id, event.target.value)}
+                        className="mt-2 w-full rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700"
+                        aria-label={`Change state of ${d.display_name}`}
+                      >
+                        <option value="">Demo: change state…</option>
+                        {STATE_CHOICES.map((choice) => (
+                          <option key={choice} value={choice}>
+                            {choice}
+                          </option>
+                        ))}
+                      </select>
+                      {stateErrors[d.id] && (
+                        <p role="alert" className="mt-1 text-xs text-red-700">
+                          {stateErrors[d.id]}
+                        </p>
+                      )}
+                    </div>
+                  )}
 
                   <label className="mt-3 block text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                     Zone assignment

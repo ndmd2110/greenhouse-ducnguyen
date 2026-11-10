@@ -7,9 +7,9 @@ from src.domain.devices.entity import Device
 from src.domain.sensors.entity import Sensor
 from src.domain.sensors.errors import DeviceNotFoundError
 from src.domain.sensors.sampling import initial_sampling_interval
+from src.domain.actuators.state import INITIAL_STATE
 from src.infrastructure.persistence.mappers import device_row_to_domain, device_row_to_sensor
-from src.infrastructure.persistence.models import DeviceRow
-
+from src.infrastructure.persistence.models import ActuatorStateRow, DeviceRow
 
 class DeviceRepository:
     def __init__(self, session: Session):
@@ -61,6 +61,9 @@ class DeviceRepository:
             tracking_enabled=device.tracking_enabled,
         )
         self.session.add(row)
+        if device.role == "actuator":
+            self.session.flush()  # assigns row.id when the Device had id=None
+            self.session.add(ActuatorStateRow(device_id=row.id, state=INITIAL_STATE))
         self.session.commit()
         self.session.refresh(row)
         return device_row_to_domain(row)

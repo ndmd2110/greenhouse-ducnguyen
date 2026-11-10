@@ -32,6 +32,9 @@ export interface DeviceDto {
   default_config: Record<string, unknown>;
   zone_id: string | null;
   location_id: string | null;
+  // Phase 8: only actuators have a state; sensors get null / [].
+  state: string | null;
+  allowed_commands: string[];
 }
 
 export interface LocationDto {
@@ -358,5 +361,46 @@ export interface LocationOverviewDto {
 export async function fetchOverview(locationId: string): Promise<LocationOverviewDto> {
   const res = await fetch(`${API_BASE}/locations/${locationId}/overview`);
   if (!res.ok) throw await readError(res, "Failed to load overview");
+  return res.json();
+}
+
+// Phase 8 - State
+export async function transitionDevice(deviceId: string, target: string): Promise<DeviceDto> {
+  const res = await fetch(`${API_BASE}/devices/${deviceId}/transition`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ target }),
+  });
+  if (!res.ok) throw await readError(res, "Failed to change state");
+  return res.json();
+}
+
+// Phase 9 - Decorator (execution log)
+export interface ExecutionDto {
+  id: string;
+  device_id: string;
+  success: boolean;
+  policy_applied: string[];
+  message: string | null;
+  created_at: string;
+}
+
+export async function listExecutions(limit = 20): Promise<ExecutionDto[]> {
+  const res = await fetch(`${API_BASE}/actuators/executions?limit=${limit}`);
+  if (!res.ok) throw await readError(res, "Failed to load executions");
+  return res.json();
+}
+
+export async function applyActuatorCommand(
+  deviceId: string,
+  command: string,
+  payload: Record<string, unknown> = {},
+): Promise<ExecutionDto> {
+  const res = await fetch(`${API_BASE}/actuators/${deviceId}/apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ command, payload }),
+  });
+  if (!res.ok) throw await readError(res, "Failed to apply command");
   return res.json();
 }

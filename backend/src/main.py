@@ -22,6 +22,7 @@ from src.interfaces.api.devices import router as devices_router
 from src.interfaces.api.locations import router as locations_router
 from src.interfaces.api.automation import router as automation_router
 from src.interfaces.api.overview import router as overview_router
+from src.interfaces.api.actuators import router as actuators_router
 
 
 logger = logging.getLogger(__name__)
@@ -87,6 +88,7 @@ app.include_router(devices_router)
 app.include_router(locations_router)
 app.include_router(automation_router)
 app.include_router(overview_router)
+app.include_router(actuators_router)
 # 3. Health check
 @app.get("/health")
 def health_check():

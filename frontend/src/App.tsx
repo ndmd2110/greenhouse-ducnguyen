@@ -3,7 +3,7 @@ import { DeviceList } from './components/devices/DeviceList'
 import { SensorList } from './features/sensors/SensorList'
 import { StrategyPanel } from './features/automation/StrategyPanel'
 import { OverviewPanel } from './components/overview/OverviewPanel'
-
+import { ExecutionLog } from './components/actuators/ExecutionLog'
 import './index.css'
 
 function App() {
@@ -31,6 +31,9 @@ function App() {
           <OverviewPanel />
         </section>
         <DeviceList />
+        <section id="executions">
+          <ExecutionLog />
+        </section>
         <SensorList />
       </div>
     </main>
